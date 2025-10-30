@@ -33,139 +33,142 @@ import org.springframework.core.env.Environment;
  */
 class ApplicationProperties {
 
-	/**
-	 * Whether bean definition overriding, by registering a definition with the same name
-	 * as an existing definition, is allowed.
-	 */
-	private boolean allowBeanDefinitionOverriding;
+    /**
+     * Whether bean definition overriding, by registering a definition with the same name
+     * as an existing definition, is allowed.
+     */
+    private boolean allowBeanDefinitionOverriding;
 
-	/**
-	 * Whether to allow circular references between beans and automatically try to resolve
-	 * them.
-	 */
-	private boolean allowCircularReferences;
+    /**
+     * Whether to allow circular references between beans and automatically try to resolve
+     * them.
+     */
+    private boolean allowCircularReferences;
 
-	/**
-	 * Mode used to display the banner when the application runs.
-	 */
-	private Banner.Mode bannerMode;
+    /**
+     * Mode used to display the banner when the application runs.
+     */
+    private Banner.Mode bannerMode;
 
-	/**
-	 * Whether to keep the application alive even if there are no more non-daemon threads.
-	 */
-	private boolean keepAlive;
+    /**
+     * Whether to keep the application alive even if there are no more non-daemon threads.
+     */
+    private boolean keepAlive;
 
-	/**
-	 * Whether initialization should be performed lazily.
-	 */
-	private boolean lazyInitialization;
+    /**
+     * Whether initialization should be performed lazily.
+     */
+    private boolean lazyInitialization;
 
-	/**
-	 * Whether to log information about the application when it starts.
-	 */
-	private boolean logStartupInfo = true;
+    /**
+     * Whether to log information about the application when it starts.
+     */
+    private boolean logStartupInfo = true;
 
-	/**
-	 * Whether the application should have a shutdown hook registered.
-	 */
-	private boolean registerShutdownHook = true;
+    /**
+     * Whether the application should have a shutdown hook registered.
+     */
+    private boolean registerShutdownHook = true;
 
-	/**
-	 * Sources (class names, package names, or XML resource locations) to include in the
-	 * ApplicationContext.
-	 */
-	private Set<String> sources = new LinkedHashSet<>();
+    /**
+     * Sources (class names, package names, or XML resource locations) to include in the
+     * ApplicationContext.
+     */
+    private Set<String> sources = new LinkedHashSet<>();
 
-	/**
-	 * Flag to explicitly request a specific type of web application. If not set,
-	 * auto-detected based on the classpath.
-	 */
-	private WebApplicationType webApplicationType;
+    /**
+     * Flag to explicitly request a specific type of web application. If not set,
+     * auto-detected based on the classpath.
+     * <p>
+     * Web 应用类型（是个枚举）
+     * 根据类路径是否存在特定的类，来推断得出
+     */
+    private WebApplicationType webApplicationType;
 
-	boolean isAllowBeanDefinitionOverriding() {
-		return this.allowBeanDefinitionOverriding;
-	}
+    boolean isAllowBeanDefinitionOverriding() {
+        return this.allowBeanDefinitionOverriding;
+    }
 
-	void setAllowBeanDefinitionOverriding(boolean allowBeanDefinitionOverriding) {
-		this.allowBeanDefinitionOverriding = allowBeanDefinitionOverriding;
-	}
+    void setAllowBeanDefinitionOverriding(boolean allowBeanDefinitionOverriding) {
+        this.allowBeanDefinitionOverriding = allowBeanDefinitionOverriding;
+    }
 
-	boolean isAllowCircularReferences() {
-		return this.allowCircularReferences;
-	}
+    boolean isAllowCircularReferences() {
+        return this.allowCircularReferences;
+    }
 
-	void setAllowCircularReferences(boolean allowCircularReferences) {
-		this.allowCircularReferences = allowCircularReferences;
-	}
+    void setAllowCircularReferences(boolean allowCircularReferences) {
+        this.allowCircularReferences = allowCircularReferences;
+    }
 
-	Mode getBannerMode(Environment environment) {
-		if (this.bannerMode != null) {
-			return this.bannerMode;
-		}
-		boolean structuredLoggingEnabled = environment
-			.containsProperty(LoggingSystemProperty.CONSOLE_STRUCTURED_FORMAT.getApplicationPropertyName());
-		return (structuredLoggingEnabled) ? Mode.OFF : Banner.Mode.CONSOLE;
-	}
+    Mode getBannerMode(Environment environment) {
+        if (this.bannerMode != null) {
+            return this.bannerMode;
+        }
+        boolean structuredLoggingEnabled = environment
+                .containsProperty(LoggingSystemProperty.CONSOLE_STRUCTURED_FORMAT.getApplicationPropertyName());
+        return (structuredLoggingEnabled) ? Mode.OFF : Banner.Mode.CONSOLE;
+    }
 
-	void setBannerMode(Mode bannerMode) {
-		this.bannerMode = bannerMode;
-	}
+    void setBannerMode(Mode bannerMode) {
+        this.bannerMode = bannerMode;
+    }
 
-	boolean isKeepAlive() {
-		return this.keepAlive;
-	}
+    boolean isKeepAlive() {
+        return this.keepAlive;
+    }
 
-	void setKeepAlive(boolean keepAlive) {
-		this.keepAlive = keepAlive;
-	}
+    void setKeepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
+    }
 
-	boolean isLazyInitialization() {
-		return this.lazyInitialization;
-	}
+    boolean isLazyInitialization() {
+        return this.lazyInitialization;
+    }
 
-	void setLazyInitialization(boolean lazyInitialization) {
-		this.lazyInitialization = lazyInitialization;
-	}
+    void setLazyInitialization(boolean lazyInitialization) {
+        this.lazyInitialization = lazyInitialization;
+    }
 
-	boolean isLogStartupInfo() {
-		return this.logStartupInfo;
-	}
+    boolean isLogStartupInfo() {
+        return this.logStartupInfo;
+    }
 
-	void setLogStartupInfo(boolean logStartupInfo) {
-		this.logStartupInfo = logStartupInfo;
-	}
+    void setLogStartupInfo(boolean logStartupInfo) {
+        this.logStartupInfo = logStartupInfo;
+    }
 
-	boolean isRegisterShutdownHook() {
-		return this.registerShutdownHook;
-	}
+    boolean isRegisterShutdownHook() {
+        return this.registerShutdownHook;
+    }
 
-	void setRegisterShutdownHook(boolean registerShutdownHook) {
-		this.registerShutdownHook = registerShutdownHook;
-	}
+    void setRegisterShutdownHook(boolean registerShutdownHook) {
+        this.registerShutdownHook = registerShutdownHook;
+    }
 
-	Set<String> getSources() {
-		return this.sources;
-	}
+    Set<String> getSources() {
+        return this.sources;
+    }
 
-	void setSources(Set<String> sources) {
-		this.sources = new LinkedHashSet<>(sources);
-	}
+    void setSources(Set<String> sources) {
+        this.sources = new LinkedHashSet<>(sources);
+    }
 
-	WebApplicationType getWebApplicationType() {
-		return this.webApplicationType;
-	}
+    WebApplicationType getWebApplicationType() {
+        return this.webApplicationType;
+    }
 
-	void setWebApplicationType(WebApplicationType webApplicationType) {
-		this.webApplicationType = webApplicationType;
-	}
+    void setWebApplicationType(WebApplicationType webApplicationType) {
+        this.webApplicationType = webApplicationType;
+    }
 
-	static class ApplicationPropertiesRuntimeHints implements RuntimeHintsRegistrar {
+    static class ApplicationPropertiesRuntimeHints implements RuntimeHintsRegistrar {
 
-		@Override
-		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
-			BindableRuntimeHintsRegistrar.forTypes(ApplicationProperties.class).registerHints(hints, classLoader);
-		}
+        @Override
+        public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+            BindableRuntimeHintsRegistrar.forTypes(ApplicationProperties.class).registerHints(hints, classLoader);
+        }
 
-	}
+    }
 
 }
