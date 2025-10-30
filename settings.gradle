@@ -53,6 +53,7 @@ settings.gradle.projectsLoaded {
 	}
 }
 
+include "spring-boot-my-test"
 include "spring-boot-project:spring-boot"
 include "spring-boot-project:spring-boot-actuator"
 include "spring-boot-project:spring-boot-actuator-autoconfigure"
