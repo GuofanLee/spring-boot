@@ -317,14 +317,26 @@ public class SpringApplication {
      * @return a running {@link ApplicationContext}
      */
     public ConfigurableApplicationContext run(String... args) {
+        /* 创建并返回了一个 Startup 类的子类 StandardStartup 对象，该对象中什么也没做，
+         * 只记录了容器启动时间，即初始化了其成员变量 startTime = System.currentTimeMillis();
+         */
         Startup startup = Startup.create();
+        //允许调用容器关闭事件回调方法
         if (this.properties.isRegisterShutdownHook()) {
+            //将 SpringApplicationShutdownHook 中的 shutdownHook 设置为了 true
             SpringApplication.shutdownHook.enableShutdownHookAddition();
         }
+        //创建并返回了一个 DefaultBootstrapContext 对象
         DefaultBootstrapContext bootstrapContext = createBootstrapContext();
         ConfigurableApplicationContext context = null;
+        //设置一个系统属性：java.awt.headless=true
         configureHeadlessProperty();
+        /*
+         * 获取容器启动监听器列表，该列表包装在 listeners 对象中
+         * 最终获取到了一个 EventPublishingRunListener 监听器，该监听器用来处理 Spring Boot 命令行启动参数（也就是 main() 方法的入参）
+         */
         SpringApplicationRunListeners listeners = getRunListeners(args);
+        //TODO
         listeners.starting(bootstrapContext, this.mainApplicationClass);
         try {
             ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
@@ -356,8 +368,12 @@ public class SpringApplication {
         return context;
     }
 
+    /**
+     * 创建并返回一个 DefaultBootstrapContext 对象
+     */
     private DefaultBootstrapContext createBootstrapContext() {
         DefaultBootstrapContext bootstrapContext = new DefaultBootstrapContext();
+        //bootstrapRegistryInitializers 是个空 List，所以这个循环不会执行
         this.bootstrapRegistryInitializers.forEach((initializer) -> initializer.initialize(bootstrapContext));
         return bootstrapContext;
     }
@@ -457,22 +473,50 @@ public class SpringApplication {
         refresh(context);
     }
 
+    /**
+     * 设置一个系统属性：java.awt.headless=true
+     */
     private void configureHeadlessProperty() {
         System.setProperty(SYSTEM_PROPERTY_JAVA_AWT_HEADLESS,
                 System.getProperty(SYSTEM_PROPERTY_JAVA_AWT_HEADLESS, Boolean.toString(this.headless)));
     }
 
+    /**
+     * 获取容器启动监听器列表，该列表包装在 SpringApplicationRunListeners 对象中
+     */
     private SpringApplicationRunListeners getRunListeners(String[] args) {
+        //ArgumentResolver 相当于一个 Map<Class<T>, T>，Map 的 Key 是一个 Class 对象，Map 的 Value 是 Class 类型对应的参数值
         ArgumentResolver argumentResolver = ArgumentResolver.of(SpringApplication.class, this);
         argumentResolver = argumentResolver.and(String[].class, args);
+        /*
+        /* 从类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中读取配置的
+         * org.springframework.boot.SpringApplicationRunListener 实现类列表并创建其对象
+         * 其中，创建对象需要的参数从 argumentResolver 中获取
+         * 最终获取到了一个 EventPublishingRunListener 监听器对象，该监听器用来处理 Spring Boot 命令行启动参数（也就是 main() 方法的入参）
+         *
+         * 读取所有类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中的 Key-Value 对，并将其合并到一个 Map<String, List<String>> 中
+         * 注意：一个 Key 可能对应多个 Value，且多个 META-INF/spring.factories 文件中可能存在相同的 Key，这些 Key 中有的 Value 可能会重复
+         *      所以才会将所有相同的 Key 对应的 Value 都放到一个 List 中，且对 List 中的元素进行了去重
+         *      这里的 Key 一般是一个接口的全限定名，而 Value 是这些接口的实现类
+         * 然后再查找 Key-Value 对中是否存在名为 org.springframework.boot.SpringApplicationRunListener 的 Key
+         * 如果存在，则创建其 Value 对应的对象，并将对象放到一个 List 中返回
+         */
         List<SpringApplicationRunListener> listeners = getSpringFactoriesInstances(SpringApplicationRunListener.class,
                 argumentResolver);
+        /*
+         * 从 ThreadLocal<SpringApplicationHook> 中获取容器启动监听事件包装器
+         * 因为从来没有在 ThreadLocal<SpringApplicationHook> 中设置过 SpringApplicationHook 对象
+         * 所以这里得到的 SpringApplicationHook 对象为 null
+         */
         SpringApplicationHook hook = applicationHook.get();
+        //从容器启动监听事件包装器中获取监听器（由上可知，这里并没有获取到）
         SpringApplicationRunListener hookListener = (hook != null) ? hook.getRunListener(this) : null;
+        //如果从容器启动监听事件包装器中获取到了监听器，则将其添加到监听器列表中（由上可知，这里并没有获取到）
         if (hookListener != null) {
             listeners = new ArrayList<>(listeners);
             listeners.add(hookListener);
         }
+        //将监听器列表包装在 SpringApplicationRunListeners 对象中，并将其返回
         return new SpringApplicationRunListeners(logger, listeners, this.applicationStartup);
     }
 
@@ -1761,6 +1805,9 @@ public class SpringApplication {
             ClassLoader classLoader = Startup.class.getClassLoader();
             return (ClassUtils.isPresent("jdk.crac.management.CRaCMXBean", classLoader)
                     && ClassUtils.isPresent("org.crac.management.CRaCMXBean", classLoader))
+                    /* 条件为 false，创建并返回当前类的子类 StandardStartup 对象，该对象中什么也没做，
+                     * 只记录了容器启动时间，即初始化了其成员变量 startTime = System.currentTimeMillis();
+                     */
                     ? new CoordinatedRestoreAtCheckpointStartup() : new StandardStartup();
         }
 
@@ -1771,6 +1818,7 @@ public class SpringApplication {
      */
     private static final class StandardStartup extends Startup {
 
+        //容器启动时间，也即容器初始化时间。
         private final Long startTime = System.currentTimeMillis();
 
         @Override
