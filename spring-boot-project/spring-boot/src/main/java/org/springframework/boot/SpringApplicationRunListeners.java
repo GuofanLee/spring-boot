@@ -37,89 +37,99 @@ import org.springframework.util.ReflectionUtils;
  */
 class SpringApplicationRunListeners {
 
-	private final Log log;
+    private final Log log;
 
-	private final List<SpringApplicationRunListener> listeners;
+    private final List<SpringApplicationRunListener> listeners;
 
-	private final ApplicationStartup applicationStartup;
+    //实际类型：DefaultApplicationStartup
+    private final ApplicationStartup applicationStartup;
 
-	SpringApplicationRunListeners(Log log, List<SpringApplicationRunListener> listeners,
-			ApplicationStartup applicationStartup) {
-		this.log = log;
-		this.listeners = List.copyOf(listeners);
-		this.applicationStartup = applicationStartup;
-	}
+    SpringApplicationRunListeners(Log log, List<SpringApplicationRunListener> listeners,
+            ApplicationStartup applicationStartup) {
+        this.log = log;
+        this.listeners = List.copyOf(listeners);
+        this.applicationStartup = applicationStartup;
+    }
 
-	void starting(ConfigurableBootstrapContext bootstrapContext, Class<?> mainApplicationClass) {
-		doWithListeners("spring.boot.application.starting", (listener) -> listener.starting(bootstrapContext),
-				(step) -> {
-					if (mainApplicationClass != null) {
-						step.tag("mainApplicationClass", mainApplicationClass.getName());
-					}
-				});
-	}
+    void starting(ConfigurableBootstrapContext bootstrapContext, Class<?> mainApplicationClass) {
+        //详细注释见 doWithListeners() 方法
+        doWithListeners("spring.boot.application.starting", (listener) -> listener.starting(bootstrapContext),
+                (step) -> {
+                    if (mainApplicationClass != null) {
+                        step.tag("mainApplicationClass", mainApplicationClass.getName());
+                    }
+                });
+    }
 
-	void environmentPrepared(ConfigurableBootstrapContext bootstrapContext, ConfigurableEnvironment environment) {
-		doWithListeners("spring.boot.application.environment-prepared",
-				(listener) -> listener.environmentPrepared(bootstrapContext, environment));
-	}
+    void environmentPrepared(ConfigurableBootstrapContext bootstrapContext, ConfigurableEnvironment environment) {
+        doWithListeners("spring.boot.application.environment-prepared",
+                (listener) -> listener.environmentPrepared(bootstrapContext, environment));
+    }
 
-	void contextPrepared(ConfigurableApplicationContext context) {
-		doWithListeners("spring.boot.application.context-prepared", (listener) -> listener.contextPrepared(context));
-	}
+    void contextPrepared(ConfigurableApplicationContext context) {
+        doWithListeners("spring.boot.application.context-prepared", (listener) -> listener.contextPrepared(context));
+    }
 
-	void contextLoaded(ConfigurableApplicationContext context) {
-		doWithListeners("spring.boot.application.context-loaded", (listener) -> listener.contextLoaded(context));
-	}
+    void contextLoaded(ConfigurableApplicationContext context) {
+        doWithListeners("spring.boot.application.context-loaded", (listener) -> listener.contextLoaded(context));
+    }
 
-	void started(ConfigurableApplicationContext context, Duration timeTaken) {
-		doWithListeners("spring.boot.application.started", (listener) -> listener.started(context, timeTaken));
-	}
+    void started(ConfigurableApplicationContext context, Duration timeTaken) {
+        doWithListeners("spring.boot.application.started", (listener) -> listener.started(context, timeTaken));
+    }
 
-	void ready(ConfigurableApplicationContext context, Duration timeTaken) {
-		doWithListeners("spring.boot.application.ready", (listener) -> listener.ready(context, timeTaken));
-	}
+    void ready(ConfigurableApplicationContext context, Duration timeTaken) {
+        doWithListeners("spring.boot.application.ready", (listener) -> listener.ready(context, timeTaken));
+    }
 
-	void failed(ConfigurableApplicationContext context, Throwable exception) {
-		doWithListeners("spring.boot.application.failed",
-				(listener) -> callFailedListener(listener, context, exception), (step) -> {
-					step.tag("exception", exception.getClass().toString());
-					step.tag("message", exception.getMessage());
-				});
-	}
+    void failed(ConfigurableApplicationContext context, Throwable exception) {
+        doWithListeners("spring.boot.application.failed",
+                (listener) -> callFailedListener(listener, context, exception), (step) -> {
+                    step.tag("exception", exception.getClass().toString());
+                    step.tag("message", exception.getMessage());
+                });
+    }
 
-	private void callFailedListener(SpringApplicationRunListener listener, ConfigurableApplicationContext context,
-			Throwable exception) {
-		try {
-			listener.failed(context, exception);
-		}
-		catch (Throwable ex) {
-			if (exception == null) {
-				ReflectionUtils.rethrowRuntimeException(ex);
-			}
-			if (this.log.isDebugEnabled()) {
-				this.log.error("Error handling failed", ex);
-			}
-			else {
-				String message = ex.getMessage();
-				message = (message != null) ? message : "no error message";
-				this.log.warn("Error handling failed (" + message + ")");
-			}
-		}
-	}
+    private void callFailedListener(SpringApplicationRunListener listener, ConfigurableApplicationContext context,
+            Throwable exception) {
+        try {
+            listener.failed(context, exception);
+        }
+        catch (Throwable ex) {
+            if (exception == null) {
+                ReflectionUtils.rethrowRuntimeException(ex);
+            }
+            if (this.log.isDebugEnabled()) {
+                this.log.error("Error handling failed", ex);
+            }
+            else {
+                String message = ex.getMessage();
+                message = (message != null) ? message : "no error message";
+                this.log.warn("Error handling failed (" + message + ")");
+            }
+        }
+    }
 
-	private void doWithListeners(String stepName, Consumer<SpringApplicationRunListener> listenerAction) {
-		doWithListeners(stepName, listenerAction, null);
-	}
+    private void doWithListeners(String stepName, Consumer<SpringApplicationRunListener> listenerAction) {
+        doWithListeners(stepName, listenerAction, null);
+    }
 
-	private void doWithListeners(String stepName, Consumer<SpringApplicationRunListener> listenerAction,
-			Consumer<StartupStep> stepAction) {
-		StartupStep step = this.applicationStartup.start(stepName);
-		this.listeners.forEach(listenerAction);
-		if (stepAction != null) {
-			stepAction.accept(step);
-		}
-		step.end();
-	}
+    private void doWithListeners(String stepName, Consumer<SpringApplicationRunListener> listenerAction,
+            Consumer<StartupStep> stepAction) {
+        //applicationStartup 的实际类型：DefaultApplicationStartup，这个方法返回了他的内部类 DefaultStartupStep 的对象
+        StartupStep step = this.applicationStartup.start(stepName);
+        /* 调用每个 listener 中的 starting(bootstrapContext) 方法
+         * 其中的 bootstrapContext 参数是 DefaultBootstrapContext 的实例
+         * 由前可知，这里的 listeners 中只有一个监听器：EventPublishingRunListener
+         * 但是 EventPublishingRunListener 里面会处理 SpringApplication 中所有需要处理的监听器，并调用监听器的 ApplicationListener#onApplicationEvent() 方法
+         */
+        this.listeners.forEach(listenerAction);
+        if (stepAction != null) {
+            //又原封不动返回了 DefaultApplicationStartup 中的内部类 DefaultStartupStep 的对象
+            stepAction.accept(step);
+        }
+        //什么都没做
+        step.end();
+    }
 
 }

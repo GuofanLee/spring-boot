@@ -331,15 +331,16 @@ public class SpringApplication {
         ConfigurableApplicationContext context = null;
         //设置一个系统属性：java.awt.headless=true
         configureHeadlessProperty();
-        /*
-         * 获取容器启动监听器列表，该列表包装在 listeners 对象中
-         * 最终获取到了一个 EventPublishingRunListener 监听器，该监听器用来处理 Spring Boot 命令行启动参数（也就是 main() 方法的入参）
+        /* 获取容器启动监听器，这些监听器包装在 listeners 对象中，实际上 listeners 中只有一个 EventPublishingRunListener 监听器
+         * EventPublishingRunListener 的作用是：在容器启动的不同阶段，从当前对象的 listeners（即 this.listeners）中过滤出对容器不同启动阶段感兴趣的监听器，并调用其 onApplicationEvent() 方法
          */
         SpringApplicationRunListeners listeners = getRunListeners(args);
-        //TODO
+        //容器启动中
         listeners.starting(bootstrapContext, this.mainApplicationClass);
         try {
+            //解析命令行参数，并将其封装在 applicationArguments 中
             ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+            //准备运行环境
             ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
             Banner printedBanner = printBanner(environment);
             context = createApplicationContext();
@@ -381,7 +382,11 @@ public class SpringApplication {
     private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
             DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
         // Create and configure the environment
+        //创建运行环境，根据应用类型，返回 ApplicationServletEnvironment 或者 ApplicationReactiveWebEnvironment 或者 ApplicationEnvironment
         ConfigurableEnvironment environment = getOrCreateEnvironment();
+        /* 加载配置参数，主要加载了命令行参数和进程 PID
+         * applicationArguments.getSourceArgs() 返回的是主启动类中 main() 方法的原始参数，即 String[] args 数组
+         */
         configureEnvironment(environment, applicationArguments.getSourceArgs());
         ConfigurationPropertySources.attach(environment);
         listeners.environmentPrepared(bootstrapContext, environment);
@@ -506,10 +511,10 @@ public class SpringApplication {
         /*
          * 从 ThreadLocal<SpringApplicationHook> 中获取容器启动监听事件包装器
          * 因为从来没有在 ThreadLocal<SpringApplicationHook> 中设置过 SpringApplicationHook 对象
-         * 所以这里得到的 SpringApplicationHook 对象为 null
+         * 所以这里获取到的 SpringApplicationHook 对象为 null
          */
         SpringApplicationHook hook = applicationHook.get();
-        //从容器启动监听事件包装器中获取监听器（由上可知，这里并没有获取到）
+        //从容器启动监听事件包装器中获取监听器（由上可知，这里返回的是 null）
         SpringApplicationRunListener hookListener = (hook != null) ? hook.getRunListener(this) : null;
         //如果从容器启动监听事件包装器中获取到了监听器，则将其添加到监听器列表中（由上可知，这里并没有获取到）
         if (hookListener != null) {
@@ -532,11 +537,18 @@ public class SpringApplication {
         if (this.environment != null) {
             return this.environment;
         }
+        //获取 Web 应用类型
         WebApplicationType webApplicationType = this.properties.getWebApplicationType();
+        /* 根据 webApplicationType，创建运行环境
+         * applicationContextFactory 的实际类型为 DefaultApplicationContextFactory
+         * 根据 webApplicationType，返回 ApplicationServletEnvironment 对象或者 ApplicationReactiveWebEnvironment 对象
+         * 如果 webApplicationType 既不是 WebApplicationType.REACTIVE，也不是 WebApplicationType.SERVLET，则返回 null
+         */
         ConfigurableEnvironment environment = this.applicationContextFactory.createEnvironment(webApplicationType);
         if (environment == null && this.applicationContextFactory != ApplicationContextFactory.DEFAULT) {
             environment = ApplicationContextFactory.DEFAULT.createEnvironment(webApplicationType);
         }
+        //如果 environment 不为空，则返回 environment，否则创建并返回一个 ApplicationEnvironment 对象作为默认的运行环境
         return (environment != null) ? environment : new ApplicationEnvironment();
     }
 
@@ -552,10 +564,14 @@ public class SpringApplication {
      * @see #configurePropertySources(ConfigurableEnvironment, String[])
      */
     protected void configureEnvironment(ConfigurableEnvironment environment, String[] args) {
+        //这个参数是 true
         if (this.addConversionService) {
+            //给环境设置一个 ApplicationConversionService 对象
             environment.setConversionService(new ApplicationConversionService());
         }
+        //加载配置参数，主要加载了命令行参数和进程 PID
         configurePropertySources(environment, args);
+        //空方法，什么都没做
         configureProfiles(environment, args);
     }
 
@@ -567,12 +583,16 @@ public class SpringApplication {
      * @see #configureEnvironment(ConfigurableEnvironment, String[])
      */
     protected void configurePropertySources(ConfigurableEnvironment environment, String[] args) {
+        //获取属性资源，其中已经包括了各种系统属性、环境变量等
         MutablePropertySources sources = environment.getPropertySources();
+        //this.defaultProperties 是 null，所以不会走下面的 if
         if (!CollectionUtils.isEmpty(this.defaultProperties)) {
             DefaultPropertiesPropertySource.addOrMerge(this.defaultProperties, sources);
         }
+        //this.addCommandLineProperties 本身是 true，所以只要 args.length > 0，就会进入下面的 if
         if (this.addCommandLineProperties && args.length > 0) {
             String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
+            //不会走这个分支
             if (sources.contains(name)) {
                 PropertySource<?> source = sources.get(name);
                 CompositePropertySource composite = new CompositePropertySource(name);
@@ -582,9 +602,11 @@ public class SpringApplication {
                 sources.replace(name, composite);
             }
             else {
+                //创建一个 SimpleCommandLinePropertySource 对象，并将其添加到配置资源中的第一个位置，其中包含了命令行参数
                 sources.addFirst(new SimpleCommandLinePropertySource(args));
             }
         }
+        //创建一个 ApplicationInfoPropertySource 对象，并将其添加到配置资源的最后一个位置，其中包含了应用的版本号（为空）和进程 ID
         environment.getPropertySources().addLast(new ApplicationInfoPropertySource(this.mainApplicationClass));
     }
 
