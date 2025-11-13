@@ -34,6 +34,8 @@ public class MyTestApplication {
         ConfigurableApplicationContext app = SpringApplication.run(MyTestApplication.class, args);
         UserService userService = app.getBean(UserService.class);
         System.out.println(userService);
+        String name = userService.getName();
+        System.out.println(name);
     }
 
 }

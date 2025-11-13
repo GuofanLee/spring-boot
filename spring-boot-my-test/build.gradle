@@ -18,9 +18,10 @@ plugins {
     id 'java'
 }
 
-description = 'Spring Boot Test Support'
+description = 'My Spring Boot Test'
 
 dependencies {
     implementation(project(":spring-boot-project:spring-boot-starters:spring-boot-starter-web"))
+    implementation(project(":spring-boot-project:spring-boot-starters:spring-boot-starter-aop"))
     testImplementation(project(":spring-boot-project:spring-boot-starters:spring-boot-starter-test"))
 }

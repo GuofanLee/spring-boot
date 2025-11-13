@@ -23,4 +23,7 @@ package org.springframework.boot.my.test.service;
  * @since 2025-10-30 16:30
  */
 public interface UserService {
+
+    String getName();
+
 }
