@@ -36,54 +36,57 @@ import org.springframework.util.StringUtils;
  */
 class ApplicationInfoPropertySource extends MapPropertySource implements OriginLookup<String> {
 
-	static final String NAME = "applicationInfo";
+    static final String NAME = "applicationInfo";
 
-	ApplicationInfoPropertySource(Class<?> mainClass) {
-		super(NAME, getProperties(readVersion(mainClass)));
-	}
+    ApplicationInfoPropertySource(Class<?> mainClass) {
+        //readVersion(mainClass) 方法返回的是 null，所以获取到的资源中只有服务进程 ID
+        super(NAME, getProperties(readVersion(mainClass)));
+    }
 
-	ApplicationInfoPropertySource(String applicationVersion) {
-		super(NAME, getProperties(applicationVersion));
-	}
+    ApplicationInfoPropertySource(String applicationVersion) {
+        super(NAME, getProperties(applicationVersion));
+    }
 
-	@Override
-	public Origin getOrigin(String key) {
-		return null;
-	}
+    @Override
+    public Origin getOrigin(String key) {
+        return null;
+    }
 
-	@Override
-	public boolean isImmutable() {
-		return true;
-	}
+    @Override
+    public boolean isImmutable() {
+        return true;
+    }
 
-	private static Map<String, Object> getProperties(String applicationVersion) {
-		Map<String, Object> result = new HashMap<>();
-		if (StringUtils.hasText(applicationVersion)) {
-			result.put("spring.application.version", applicationVersion);
-		}
-		ApplicationPid applicationPid = new ApplicationPid();
-		if (applicationPid.isAvailable()) {
-			result.put("spring.application.pid", applicationPid.toLong());
-		}
-		return result;
-	}
+    private static Map<String, Object> getProperties(String applicationVersion) {
+        Map<String, Object> result = new HashMap<>();
+        if (StringUtils.hasText(applicationVersion)) {
+            //applicationVersion 是 null，所以不会走这个分支
+            result.put("spring.application.version", applicationVersion);
+        }
+        ApplicationPid applicationPid = new ApplicationPid();
+        if (applicationPid.isAvailable()) {
+            //设置服务进程 ID
+            result.put("spring.application.pid", applicationPid.toLong());
+        }
+        return result;
+    }
 
-	private static String readVersion(Class<?> applicationClass) {
-		Package sourcePackage = (applicationClass != null) ? applicationClass.getPackage() : null;
-		return (sourcePackage != null) ? sourcePackage.getImplementationVersion() : null;
-	}
+    private static String readVersion(Class<?> applicationClass) {
+        Package sourcePackage = (applicationClass != null) ? applicationClass.getPackage() : null;
+        return (sourcePackage != null) ? sourcePackage.getImplementationVersion() : null;
+    }
 
-	/**
-	 * Moves the {@link ApplicationInfoPropertySource} to the end of the environment's
-	 * property sources.
-	 * @param environment the environment
-	 */
-	static void moveToEnd(ConfigurableEnvironment environment) {
-		MutablePropertySources propertySources = environment.getPropertySources();
-		PropertySource<?> propertySource = propertySources.remove(NAME);
-		if (propertySource != null) {
-			propertySources.addLast(propertySource);
-		}
-	}
+    /**
+     * Moves the {@link ApplicationInfoPropertySource} to the end of the environment's
+     * property sources.
+     * @param environment the environment
+     */
+    static void moveToEnd(ConfigurableEnvironment environment) {
+        MutablePropertySources propertySources = environment.getPropertySources();
+        PropertySource<?> propertySource = propertySources.remove(NAME);
+        if (propertySource != null) {
+            propertySources.addLast(propertySource);
+        }
+    }
 
 }

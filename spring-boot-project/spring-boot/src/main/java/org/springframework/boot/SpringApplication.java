@@ -335,10 +335,12 @@ public class SpringApplication {
          * EventPublishingRunListener 的作用是：在容器启动的不同阶段，从当前对象的 listeners（即 this.listeners）中找到不同阶段需要处理的监听器，并调用其 onApplicationEvent() 方法
          */
         SpringApplicationRunListeners listeners = getRunListeners(args);
-        //容器启动中
+        //通知监听器容器启动开始
         listeners.starting(bootstrapContext, this.mainApplicationClass);
         try {
-            //解析命令行参数，并将其封装在 applicationArguments 中
+            /* 解析命令行参数，并将其封装到一个 CommandLineArgs 对象中
+             * CommandLineArgs 中有一个 Map<String, List<String>> 类型的 optionArgs 变量，其中 Map 的 Key 为参数名，Value 为参数值
+             */
             ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
             //准备运行环境
             ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
@@ -384,11 +386,15 @@ public class SpringApplication {
         // Create and configure the environment
         //创建运行环境，根据应用类型，返回 ApplicationServletEnvironment 或者 ApplicationReactiveWebEnvironment 或者 ApplicationEnvironment
         ConfigurableEnvironment environment = getOrCreateEnvironment();
-        /* 加载配置参数，主要加载了命令行参数和进程 PID
+        /* 配置环境资源，在已有的各种系统属性、环境变量等资源基础上，添加命令行参数资源和当前应用信息资源（当前服务的进程 ID）
          * applicationArguments.getSourceArgs() 返回的是主启动类中 main() 方法的原始参数，即 String[] args 数组
          */
         configureEnvironment(environment, applicationArguments.getSourceArgs());
+        /* 将所有环境资源打包进 ConfigurationPropertySourcesPropertySource，并命名为 configurationProperties，然后将其添加到环境资源的第一个位置
+         * 最终结果是：environment 中 propertySources 里面的第一个位置包含了他后面所有位置的资源（将所有环境资源包装进 ConfigurationPropertySourcesPropertySource 然后放在第一个位置）
+         */
         ConfigurationPropertySources.attach(environment);
+        //通知监听器环境准备完毕
         listeners.environmentPrepared(bootstrapContext, environment);
         ApplicationInfoPropertySource.moveToEnd(environment);
         DefaultPropertiesPropertySource.moveToEnd(environment);
@@ -549,9 +555,10 @@ public class SpringApplication {
          */
         ConfigurableEnvironment environment = this.applicationContextFactory.createEnvironment(webApplicationType);
         if (environment == null && this.applicationContextFactory != ApplicationContextFactory.DEFAULT) {
+            //this.applicationContextFactory != ApplicationContextFactory.DEFAULT 的结果为 false，所以即使 environment 为 null，也不会走这个分支
             environment = ApplicationContextFactory.DEFAULT.createEnvironment(webApplicationType);
         }
-        //如果 environment 不为空，则返回 environment，否则创建并返回一个 ApplicationEnvironment 对象作为默认的运行环境
+        //如果 environment 不为 null，则返回 environment，否则创建并返回一个 ApplicationEnvironment 对象作为默认的运行环境
         return (environment != null) ? environment : new ApplicationEnvironment();
     }
 
@@ -572,7 +579,7 @@ public class SpringApplication {
             //给环境设置一个 ApplicationConversionService 对象
             environment.setConversionService(new ApplicationConversionService());
         }
-        //加载配置参数，主要加载了命令行参数和进程 PID
+        //加载命令行参数资源和当前应用信息资源（当前服务的进程 ID）
         configurePropertySources(environment, args);
         //空方法，什么都没做
         configureProfiles(environment, args);
@@ -586,7 +593,7 @@ public class SpringApplication {
      * @see #configureEnvironment(ConfigurableEnvironment, String[])
      */
     protected void configurePropertySources(ConfigurableEnvironment environment, String[] args) {
-        //获取属性资源，其中已经包括了各种系统属性、环境变量等
+        //获取已经加载的所有环境资源，其中已经包含了各种系统属性、环境变量等
         MutablePropertySources sources = environment.getPropertySources();
         //this.defaultProperties 是 null，所以不会走下面的 if
         if (!CollectionUtils.isEmpty(this.defaultProperties)) {
@@ -595,8 +602,8 @@ public class SpringApplication {
         //this.addCommandLineProperties 本身是 true，所以只要 args.length > 0，就会进入下面的 if
         if (this.addCommandLineProperties && args.length > 0) {
             String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
-            //不会走这个分支
             if (sources.contains(name)) {
+                //不会走这个分支
                 PropertySource<?> source = sources.get(name);
                 CompositePropertySource composite = new CompositePropertySource(name);
                 composite
@@ -605,11 +612,14 @@ public class SpringApplication {
                 sources.replace(name, composite);
             }
             else {
-                //创建一个 SimpleCommandLinePropertySource 对象，并将其添加到配置资源中的第一个位置，其中包含了命令行参数
+                /* 创建一个解析了命令行参数的 SimpleCommandLinePropertySource 资源对象，并将其添加到环境资源的第一个位置
+                 * 将命令行参数解析并封装到一个 CommandLineArgs 对象中
+                 * CommandLineArgs 中有一个 Map<String, List<String>> 类型的 optionArgs 变量，其中 Map 的 Key 为参数名，Value 为参数值
+                 */
                 sources.addFirst(new SimpleCommandLinePropertySource(args));
             }
         }
-        //创建一个 ApplicationInfoPropertySource 对象，并将其添加到配置资源的最后一个位置，其中包含了应用的版本号（为空）和进程 ID
+        //创建一个包含当前服务进程 ID 的 ApplicationInfoPropertySource 资源对象，并将其添加到环境资源的最后一个位置
         environment.getPropertySources().addLast(new ApplicationInfoPropertySource(this.mainApplicationClass));
     }
 

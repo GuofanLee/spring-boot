@@ -70,7 +70,7 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
             BiFunction<ApplicationContextFactory, WebApplicationType, T> action, Supplier<T> defaultResult) {
         /*
          * 从类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中读取配置的
-         * org.springframework.boot.ApplicationContextFactory 实现类列表并创建其对象
+         * org.springframework.boot.ApplicationContextFactory 接口实现类列表并创建其对象
          * 读取到的配置：
          * org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContextFactory
          * org.springframework.boot.web.servlet.context.ServletWebServerApplicationContextFactory
