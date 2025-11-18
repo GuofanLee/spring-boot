@@ -52,7 +52,17 @@ class SpringApplicationRunListeners {
     }
 
     void starting(ConfigurableBootstrapContext bootstrapContext, Class<?> mainApplicationClass) {
-        //详细注释见 doWithListeners() 方法
+        /* 第一个参数和第三个参数没啥用
+         * 第二个参数的作用是：调用每个 listener 中的 starting(bootstrapContext) 方法
+         * 其中的 bootstrapContext 参数是 DefaultBootstrapContext 的实例
+         * 由前可知，这里的 listeners 中只有一个监听器：EventPublishingRunListener
+         * EventPublishingRunListener 会找到 SpringApplication 中不同 event（当前 event：starting）需要处理的监听器，并调用这些监听器的 onApplicationEvent() 方法
+         *
+         * starting 阶段需要处理的监听器有两个：LoggingApplicationListener 和 BackgroundPreinitializer
+         *  1、LoggingApplicationListener 中的 onApplicationEvent() 方法调用了 LogbackLoggingSystem 中的 beforeInitialize() 方法
+         *     beforeInitialize() 方法的作用：将 rootLogger 中的 ConsoleHandler 替换为 SLF4JBridgeHandler
+         *  2、BackgroundPreinitializer 中的 onApplicationEvent() 方法什么都没做
+         */
         doWithListeners("spring.boot.application.starting", (listener) -> listener.starting(bootstrapContext),
                 (step) -> {
                     if (mainApplicationClass != null) {
@@ -116,16 +126,14 @@ class SpringApplicationRunListeners {
 
     private void doWithListeners(String stepName, Consumer<SpringApplicationRunListener> listenerAction,
             Consumer<StartupStep> stepAction) {
-        //applicationStartup 的实际类型：DefaultApplicationStartup，这个方法返回了他的内部类 DefaultStartupStep 的对象
-        StartupStep step = this.applicationStartup.start(stepName);
-        /* 调用每个 listener 中的 starting(bootstrapContext) 方法
-         * 其中的 bootstrapContext 参数是 DefaultBootstrapContext 的实例
-         * 由前可知，这里的 listeners 中只有一个监听器：EventPublishingRunListener
-         * 但是 EventPublishingRunListener 里面会处理 SpringApplication 中所有需要处理的监听器，并调用监听器的 ApplicationListener#onApplicationEvent() 方法
+        /* 参数 stepName 没啥用
+         * applicationStartup 的实际类型：DefaultApplicationStartup，这个方法返回了他的内部类 DefaultStartupStep 的对象
          */
+        StartupStep step = this.applicationStartup.start(stepName);
+        //根据 listenerAction，调用每个监听器中的相应方法
         this.listeners.forEach(listenerAction);
         if (stepAction != null) {
-            //又原封不动返回了 DefaultApplicationStartup 中的内部类 DefaultStartupStep 的对象
+            //什么都没做
             stepAction.accept(step);
         }
         //什么都没做

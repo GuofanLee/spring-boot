@@ -59,6 +59,10 @@ class EventPublishingRunListener implements SpringApplicationRunListener, Ordere
 
     private final SimpleApplicationEventMulticaster initialMulticaster;
 
+    /**
+     * 该构造器的第一个参数就是主启动类的 main() 方法中调用 SpringApplication.run() 的 SpringApplication 对象
+     * 第二个参数就是主启动类的 main() 方法的入参
+     */
     EventPublishingRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
@@ -73,8 +77,14 @@ class EventPublishingRunListener implements SpringApplicationRunListener, Ordere
     @Override
     public void starting(ConfigurableBootstrapContext bootstrapContext) {
         /* bootstrapContext 的实际类型：DefaultBootstrapContext
-         * application 就是主启动类的 main() 方法中调用 SpringApplication.run() 的 SpringApplication
+         * application 就是主启动类的 main() 方法中调用 SpringApplication.run() 的 SpringApplication 对象
          * args 就是主启动类的 main() 方法的入参
+         *
+         * multicastInitialEvent() 方法的作用：找到 SpringApplication 中不同 event（当前 event：starting）需要处理的监听器，并调用这些监听器的 onApplicationEvent() 方法
+         * starting 阶段需要处理的监听器有两个：LoggingApplicationListener 和 BackgroundPreinitializer
+         *  1、LoggingApplicationListener 中的 onApplicationEvent() 方法调用了 LogbackLoggingSystem 中的 beforeInitialize() 方法
+         *     beforeInitialize() 方法的作用：将 rootLogger 中的 ConsoleHandler 替换为 SLF4JBridgeHandler
+         *  2、BackgroundPreinitializer 中的 onApplicationEvent() 方法什么都没做
          */
         multicastInitialEvent(new ApplicationStartingEvent(bootstrapContext, this.application, this.args));
     }
@@ -139,10 +149,7 @@ class EventPublishingRunListener implements SpringApplicationRunListener, Ordere
         //将 SpringApplication 中的所有监听器添加到 SimpleApplicationEventMulticaster 中
         refreshApplicationListeners();
         /* 调用 SimpleApplicationEventMulticaster 中的 multicastEvent() 方法
-         * 从 SpringApplication 中的所有监听器中找到需要处理的监听器，并调用监听器的 ApplicationListener#onApplicationEvent() 方法
-         * 这里只调用了 LoggingApplicationListener 中的 onApplicationEvent() 方法
-         * 而 LoggingApplicationListener 中的 onApplicationEvent() 方法又调用了 LogbackLoggingSystem 中的 beforeInitialize() 方法
-         * 而 LogbackLoggingSystem 中的 beforeInitialize() 方法，主要处理了：rootLogger.removeHandler(handlers[0]);
+         * multicastEvent() 方法的作用：找到 SpringApplication 中不同 event 需要处理的监听器，并调用这些监听器的 onApplicationEvent() 方法
          */
         this.initialMulticaster.multicastEvent(event);
     }

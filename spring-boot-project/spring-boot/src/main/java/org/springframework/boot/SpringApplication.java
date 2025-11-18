@@ -280,7 +280,7 @@ public class SpringApplication {
         this.bootstrapRegistryInitializers = new ArrayList<>(
                 /*
                  * 读取所有类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中的 Key-Value 对，并将其合并到一个 Map<String, List<String>> 中
-                 * 注意：一个 Key 可能对应多个 Value，且多个 META-INF/spring.factories 文件中可能存在相同的 Key，这些 Key 中有的 Value 可能会重复
+                 * 注意：一个 Key 可能对应多个 Value，且多个 META-INF/spring.factories 文件中可能存在相同的 Key，这些 Key 中有的 Value 也可能会重复
                  *      所以才会将所有相同的 Key 对应的 Value 都放到一个 List 中，且对 List 中的元素进行了去重
                  *      这里的 Key 一般是一个接口的全限定名，而 Value 是这些接口的实现类
                  * 然后再查找 Key-Value 对中是否存在名为 org.springframework.boot.BootstrapRegistryInitializer 的 Key
@@ -332,7 +332,7 @@ public class SpringApplication {
         //设置一个系统属性：java.awt.headless=true
         configureHeadlessProperty();
         /* 获取容器启动监听器，这些监听器包装在 listeners 对象中，实际上 listeners 中只有一个 EventPublishingRunListener 监听器
-         * EventPublishingRunListener 的作用是：在容器启动的不同阶段，从当前对象的 listeners（即 this.listeners）中过滤出对容器不同启动阶段感兴趣的监听器，并调用其 onApplicationEvent() 方法
+         * EventPublishingRunListener 的作用是：在容器启动的不同阶段，从当前对象的 listeners（即 this.listeners）中找到不同阶段需要处理的监听器，并调用其 onApplicationEvent() 方法
          */
         SpringApplicationRunListeners listeners = getRunListeners(args);
         //容器启动中
@@ -497,14 +497,15 @@ public class SpringApplication {
         /* 从类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中读取配置的
          * org.springframework.boot.SpringApplicationRunListener 实现类列表并创建其对象
          * 其中，创建对象需要的参数从 argumentResolver 中获取
-         * 最终获取到了一个 EventPublishingRunListener 监听器对象，该监听器用来处理 Spring Boot 命令行启动参数（也就是 main() 方法的入参）
          *
          * 读取所有类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中的 Key-Value 对，并将其合并到一个 Map<String, List<String>> 中
-         * 注意：一个 Key 可能对应多个 Value，且多个 META-INF/spring.factories 文件中可能存在相同的 Key，这些 Key 中有的 Value 可能会重复
+         * 注意：一个 Key 可能对应多个 Value，且多个 META-INF/spring.factories 文件中可能存在相同的 Key，这些 Key 中有的 Value 也可能会重复
          *      所以才会将所有相同的 Key 对应的 Value 都放到一个 List 中，且对 List 中的元素进行了去重
          *      这里的 Key 一般是一个接口的全限定名，而 Value 是这些接口的实现类
          * 然后再查找 Key-Value 对中是否存在名为 org.springframework.boot.SpringApplicationRunListener 的 Key
          * 如果存在，则创建其 Value 对应的对象，并将对象放到一个 List 中返回
+         * 这里最终获取到了一个 EventPublishingRunListener 监听器对象
+         * 该监听器的作用是：在容器启动的不同阶段，从当前对象的 listeners（即 this.listeners）中找到不同阶段需要处理的监听器，并调用其 onApplicationEvent() 方法
          */
         List<SpringApplicationRunListener> listeners = getSpringFactoriesInstances(SpringApplicationRunListener.class,
                 argumentResolver);
@@ -521,7 +522,9 @@ public class SpringApplication {
             listeners = new ArrayList<>(listeners);
             listeners.add(hookListener);
         }
-        //将监听器列表包装在 SpringApplicationRunListeners 对象中，并将其返回
+        /* 将监听器列表包装在 SpringApplicationRunListeners 对象中，并将其返回
+         * 实际上，listeners 中只有一个 EventPublishingRunListener 监听器对象
+         */
         return new SpringApplicationRunListeners(logger, listeners, this.applicationStartup);
     }
 
