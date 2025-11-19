@@ -33,51 +33,61 @@ import org.springframework.util.SystemPropertyUtils;
  */
 public class PropertySourcesPlaceholdersResolver implements PlaceholdersResolver {
 
-	private final Iterable<PropertySource<?>> sources;
+    private final Iterable<PropertySource<?>> sources;
 
-	private final PropertyPlaceholderHelper helper;
+    private final PropertyPlaceholderHelper helper;
 
-	public PropertySourcesPlaceholdersResolver(Environment environment) {
-		this(getSources(environment), null);
-	}
+    public PropertySourcesPlaceholdersResolver(Environment environment) {
+        //getSources(environment) 获取所有环境资源
+        this(getSources(environment), null);
+    }
 
-	public PropertySourcesPlaceholdersResolver(Iterable<PropertySource<?>> sources) {
-		this(sources, null);
-	}
+    public PropertySourcesPlaceholdersResolver(Iterable<PropertySource<?>> sources) {
+        this(sources, null);
+    }
 
-	public PropertySourcesPlaceholdersResolver(Iterable<PropertySource<?>> sources, PropertyPlaceholderHelper helper) {
-		this.sources = sources;
-		this.helper = (helper != null) ? helper
-				: new PropertyPlaceholderHelper(SystemPropertyUtils.PLACEHOLDER_PREFIX,
-						SystemPropertyUtils.PLACEHOLDER_SUFFIX, SystemPropertyUtils.VALUE_SEPARATOR,
-						SystemPropertyUtils.ESCAPE_CHARACTER, true);
-	}
+    public PropertySourcesPlaceholdersResolver(Iterable<PropertySource<?>> sources, PropertyPlaceholderHelper helper) {
+        //所有环境资源
+        this.sources = sources;
+        /* 获取配置属性占位符解析器
+         * 前缀：${
+         * 后缀：}
+         * 分隔符：:
+         * 转义字符：\
+         * 是否忽略无法解析的占位符：true
+         */
+        this.helper = (helper != null) ? helper
+                : new PropertyPlaceholderHelper(SystemPropertyUtils.PLACEHOLDER_PREFIX,
+                SystemPropertyUtils.PLACEHOLDER_SUFFIX, SystemPropertyUtils.VALUE_SEPARATOR,
+                SystemPropertyUtils.ESCAPE_CHARACTER, true);
+    }
 
-	@Override
-	public Object resolvePlaceholders(Object value) {
-		if (value instanceof String string) {
-			return this.helper.replacePlaceholders(string, this::resolvePlaceholder);
-		}
-		return value;
-	}
+    @Override
+    public Object resolvePlaceholders(Object value) {
+        if (value instanceof String string) {
+            return this.helper.replacePlaceholders(string, this::resolvePlaceholder);
+        }
+        return value;
+    }
 
-	protected String resolvePlaceholder(String placeholder) {
-		if (this.sources != null) {
-			for (PropertySource<?> source : this.sources) {
-				Object value = source.getProperty(placeholder);
-				if (value != null) {
-					return String.valueOf(value);
-				}
-			}
-		}
-		return null;
-	}
+    protected String resolvePlaceholder(String placeholder) {
+        if (this.sources != null) {
+            for (PropertySource<?> source : this.sources) {
+                Object value = source.getProperty(placeholder);
+                if (value != null) {
+                    return String.valueOf(value);
+                }
+            }
+        }
+        return null;
+    }
 
-	private static PropertySources getSources(Environment environment) {
-		Assert.notNull(environment, "'environment' must not be null");
-		Assert.isInstanceOf(ConfigurableEnvironment.class, environment,
-				"'environment' must be a ConfigurableEnvironment");
-		return ((ConfigurableEnvironment) environment).getPropertySources();
-	}
+    private static PropertySources getSources(Environment environment) {
+        Assert.notNull(environment, "'environment' must not be null");
+        Assert.isInstanceOf(ConfigurableEnvironment.class, environment,
+                "'environment' must be a ConfigurableEnvironment");
+        //获取所有环境资源
+        return ((ConfigurableEnvironment) environment).getPropertySources();
+    }
 
 }

@@ -338,7 +338,7 @@ public class SpringApplication {
         //通知监听器容器启动开始
         listeners.starting(bootstrapContext, this.mainApplicationClass);
         try {
-            /* 解析命令行参数，并将其封装到一个 CommandLineArgs 对象中
+            /* 解析命令行参数，将命令行参数封装到一个 CommandLineArgs 对象中
              * CommandLineArgs 中有一个 Map<String, List<String>> 类型的 optionArgs 变量，其中 Map 的 Key 为参数名，Value 为参数值
              */
             ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
@@ -386,36 +386,55 @@ public class SpringApplication {
         // Create and configure the environment
         //创建运行环境，根据应用类型，返回 ApplicationServletEnvironment 或者 ApplicationReactiveWebEnvironment 或者 ApplicationEnvironment
         ConfigurableEnvironment environment = getOrCreateEnvironment();
-        /* 配置环境资源，在已有的各种系统属性、环境变量等资源基础上，添加命令行参数资源和当前应用信息资源（当前服务的进程 ID）
+        /* 配置环境资源，在已有的各种系统属性、环境变量等资源基础上，添加命令行参数资源和当前应用信息资源（只添加了当前服务的进程 ID）
          * applicationArguments.getSourceArgs() 返回的是主启动类中 main() 方法的原始参数，即 String[] args 数组
          */
         configureEnvironment(environment, applicationArguments.getSourceArgs());
         /* 将所有环境资源打包进 ConfigurationPropertySourcesPropertySource，并命名为 configurationProperties，然后将其添加到环境资源的第一个位置
-         * 最终结果是：environment 中 propertySources 里面的第一个位置包含了他后面所有位置的资源（将所有环境资源包装进 ConfigurationPropertySourcesPropertySource 然后放在第一个位置）
+         * 最终结果是：环境资源 sources 中第一个元素包含了 sources 中的所有元素，相当于 List 中的第一个元素是该 List 的引用本身
          */
         ConfigurationPropertySources.attach(environment);
         //通知监听器环境准备完毕
         listeners.environmentPrepared(bootstrapContext, environment);
+        //将包含当前服务进程 ID 的应用信息资源移动到环境资源的最后一个位置
         ApplicationInfoPropertySource.moveToEnd(environment);
+        //环境资源中没有名为 defaultProperties 的资源，所以下面的方法没有做什么真实操作
         DefaultPropertiesPropertySource.moveToEnd(environment);
         Assert.state(!environment.containsProperty("spring.main.environment-prefix"),
                 "Environment prefix cannot be set via properties.");
+        //没看懂里面具体干了个啥
         bindToSpringApplication(environment);
+        //!this.isCustomEnvironment 为 true，所以下面的分支会执行
         if (!this.isCustomEnvironment) {
+            //使用 AppClassLoader 创建了一个 EnvironmentConverter 对象
             EnvironmentConverter environmentConverter = new EnvironmentConverter(getClassLoader());
+            /* 如果当前 environment 已经是 ApplicationServletEnvironment 类型或者 ApplicationReactiveWebEnvironment 类型或者 ApplicationEnvironment 类型，则直接返回其本身
+             * deduceEnvironmentClass()：根据当前应用类型，返回 ApplicationServletEnvironment.class 或者 ApplicationReactiveWebEnvironment.class 或者 ApplicationEnvironment.class
+             * 实际情况是当前 environment 对象就是 deduceEnvironmentClass() 方法返回的类型
+             * 所以 environmentConverter.convertEnvironmentIfNecessary(environment, deduceEnvironmentClass()) 返回的还是当前 environment 对象
+             */
             environment = environmentConverter.convertEnvironmentIfNecessary(environment, deduceEnvironmentClass());
         }
+        //上面已经调用过该方法，所以这次调用并没有改变什么
         ConfigurationPropertySources.attach(environment);
+        //返回运行环境
         return environment;
     }
 
+    /**
+     * 根据当前应用类型，返回 ApplicationServletEnvironment.class 或者 ApplicationReactiveWebEnvironment.class 或者 ApplicationEnvironment.class
+     */
     private Class<? extends ConfigurableEnvironment> deduceEnvironmentClass() {
+        //当前应用类型
         WebApplicationType webApplicationType = this.properties.getWebApplicationType();
+        //根据当前应用类型，返回 ApplicationServletEnvironment.class 或者 ApplicationReactiveWebEnvironment.class 或者 null
         Class<? extends ConfigurableEnvironment> environmentType = this.applicationContextFactory
                 .getEnvironmentType(webApplicationType);
+        //this.applicationContextFactory != ApplicationContextFactory.DEFAULT 为 false，所以下面的分支不会执行
         if (environmentType == null && this.applicationContextFactory != ApplicationContextFactory.DEFAULT) {
             environmentType = ApplicationContextFactory.DEFAULT.getEnvironmentType(webApplicationType);
         }
+        //如果既不是 ApplicationServletEnvironment.class，也不是 ApplicationReactiveWebEnvironment.class，则返回 ApplicationEnvironment.class
         return (environmentType != null) ? environmentType : ApplicationEnvironment.class;
     }
 
@@ -579,7 +598,7 @@ public class SpringApplication {
             //给环境设置一个 ApplicationConversionService 对象
             environment.setConversionService(new ApplicationConversionService());
         }
-        //加载命令行参数资源和当前应用信息资源（当前服务的进程 ID）
+        //加载命令行参数资源和当前应用信息资源（只加载了当前服务的进程 ID）
         configurePropertySources(environment, args);
         //空方法，什么都没做
         configureProfiles(environment, args);
@@ -603,7 +622,7 @@ public class SpringApplication {
         if (this.addCommandLineProperties && args.length > 0) {
             String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
             if (sources.contains(name)) {
-                //不会走这个分支
+                //刚开始 sources 中没有命令行参数资源，所以不会走这个分支
                 PropertySource<?> source = sources.get(name);
                 CompositePropertySource composite = new CompositePropertySource(name);
                 composite
@@ -613,7 +632,7 @@ public class SpringApplication {
             }
             else {
                 /* 创建一个解析了命令行参数的 SimpleCommandLinePropertySource 资源对象，并将其添加到环境资源的第一个位置
-                 * 将命令行参数解析并封装到一个 CommandLineArgs 对象中
+                 * SimpleCommandLinePropertySource：将命令行参数解析并封装到一个 CommandLineArgs 对象中
                  * CommandLineArgs 中有一个 Map<String, List<String>> 类型的 optionArgs 变量，其中 Map 的 Key 为参数名，Value 为参数值
                  */
                 sources.addFirst(new SimpleCommandLinePropertySource(args));
@@ -640,6 +659,10 @@ public class SpringApplication {
      */
     protected void bindToSpringApplication(ConfigurableEnvironment environment) {
         try {
+            /* Binder.get(environment)：获取配置属性绑定器，里面包含了所有环境资源、配置属性占位符解析器、配置属性绑定器
+             * Bindable.ofInstance(this.properties)：获取 Bindable，里面主要包含了当前 this.properties 对象（当前 SpringApplication 的配置属性）
+             * .bind("spring.main", Bindable.ofInstance(this.properties))：没看懂干了个啥
+             */
             Binder.get(environment).bind("spring.main", Bindable.ofInstance(this.properties));
         }
         catch (Exception ex) {

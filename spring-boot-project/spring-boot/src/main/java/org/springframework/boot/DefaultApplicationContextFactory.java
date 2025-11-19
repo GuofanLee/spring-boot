@@ -36,12 +36,15 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
 
     @Override
     public Class<? extends ConfigurableEnvironment> getEnvironmentType(WebApplicationType webApplicationType) {
+        /* 根据 webApplicationType，返回 ApplicationServletEnvironment.class 对象或者 ApplicationReactiveWebEnvironment.class 对象
+         * 如果 webApplicationType 既不是 WebApplicationType.REACTIVE，也不是 WebApplicationType.SERVLET，则返回 null
+         */
         return getFromSpringFactories(webApplicationType, ApplicationContextFactory::getEnvironmentType, null);
     }
 
     @Override
     public ConfigurableEnvironment createEnvironment(WebApplicationType webApplicationType) {
-        /* 根据 webApplicationType，返回 ApplicationServletEnvironment 对象或者 ApplicationReactiveWebEnvironment 对象
+        /* 根据 webApplicationType，创建并返回 ApplicationServletEnvironment 对象或者 ApplicationReactiveWebEnvironment 对象
          * 如果 webApplicationType 既不是 WebApplicationType.REACTIVE，也不是 WebApplicationType.SERVLET，则返回 null
          */
         return getFromSpringFactories(webApplicationType, ApplicationContextFactory::createEnvironment, null);
@@ -68,16 +71,17 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
 
     private <T> T getFromSpringFactories(WebApplicationType webApplicationType,
             BiFunction<ApplicationContextFactory, WebApplicationType, T> action, Supplier<T> defaultResult) {
-        /*
-         * 从类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中读取配置的
+        /* 从类路径下（包括第三方 jar 包）的 META-INF/spring.factories 文件中读取配置的
          * org.springframework.boot.ApplicationContextFactory 接口实现类列表并创建其对象
          * 读取到的配置：
          * org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContextFactory
          * org.springframework.boot.web.servlet.context.ServletWebServerApplicationContextFactory
+         *
+         * 最终返回结果由参数 action 决定
          */
         for (ApplicationContextFactory candidate : SpringFactoriesLoader.loadFactories(ApplicationContextFactory.class,
                 getClass().getClassLoader())) {
-            //根据 webApplicationType，返回 ApplicationServletEnvironment 对象或者 ApplicationReactiveWebEnvironment 对象
+            //由参数 action 决定执行 ReactiveWebServerApplicationContextFactory 或者 ServletWebServerApplicationContextFactory 中相应的方法
             T result = action.apply(candidate, webApplicationType);
             if (result != null) {
                 return result;

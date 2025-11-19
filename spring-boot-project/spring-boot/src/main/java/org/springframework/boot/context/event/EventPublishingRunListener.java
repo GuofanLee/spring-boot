@@ -92,6 +92,28 @@ class EventPublishingRunListener implements SpringApplicationRunListener, Ordere
     @Override
     public void environmentPrepared(ConfigurableBootstrapContext bootstrapContext,
             ConfigurableEnvironment environment) {
+        /* bootstrapContext 的实际类型：DefaultBootstrapContext
+         * application 就是主启动类的 main() 方法中调用 SpringApplication.run() 的 SpringApplication 对象
+         * args 就是主启动类的 main() 方法的入参
+         * environment 中包含各种系统属性、环境变量、命令行参数、当前应用信息资源（只包含当前服务的进程 ID）
+         *
+         * multicastInitialEvent() 方法的作用：找到 SpringApplication 中不同 event（当前 event：environmentPrepared）需要处理的监听器，并调用这些监听器的 onApplicationEvent() 方法
+         * environmentPrepared 阶段需要处理的监听器有五个：EnvironmentPostProcessorApplicationListener、AnsiOutputApplicationListener、LoggingApplicationListener、BackgroundPreinitializer 和 FileEncodingApplicationListener
+         *  1、EnvironmentPostProcessorApplicationListener
+         *     读取所有类路径下的 META-INF/spring.factories 配置文件，找到所有 org.springframework.boot.env.EnvironmentPostProcessor 接口的实现类并创建对象，然后调用每个对象的 postProcessEnvironment(environment, application) 方法
+         *     总共找到并创建了 7 个 org.springframework.boot.env.EnvironmentPostProcessor 接口的实现类对象，其中：
+         *      1、RandomValuePropertySourceEnvironmentPostProcessor：给 environment 中的 SystemEnvironmentPropertySource 资源后面添加了一个 RandomValuePropertySource 资源对象
+         *      2、SystemEnvironmentPropertySourceEnvironmentPostProcessor 将 environment 中的 SystemEnvironmentPropertySource 资源替换为了 SystemEnvironmentPropertySourceEnvironmentPostProcessor 中的内部类 OriginAwareSystemEnvironmentPropertySource（资源名称和内容都没变，只是换了个包装类）
+         *      3、CloudFoundryVcapEnvironmentPostProcessor 想做啥但啥都没做
+         *      4、SpringApplicationJsonEnvironmentPostProcessor 想做啥但啥都没做
+         *      5、ConfigDataEnvironmentPostProcessor 没看懂干了啥
+         *      6、IntegrationPropertiesEnvironmentPostProcessor 想做啥但啥都没做
+         *      7、ReactorEnvironmentPostProcessor 想做啥但啥都没做
+         *  2、AnsiOutputApplicationListener：没看懂干了啥
+         *  3、LoggingApplicationListener：没看懂干了啥
+         *  4、BackgroundPreinitializer：没看懂干了啥
+         *  5、FileEncodingApplicationListener：想做啥但啥都没做
+         */
         multicastInitialEvent(
                 new ApplicationEnvironmentPreparedEvent(bootstrapContext, this.application, this.args, environment));
     }

@@ -39,7 +39,7 @@ class ApplicationInfoPropertySource extends MapPropertySource implements OriginL
     static final String NAME = "applicationInfo";
 
     ApplicationInfoPropertySource(Class<?> mainClass) {
-        //readVersion(mainClass) 方法返回的是 null，所以获取到的资源中只有服务进程 ID
+        //readVersion(mainClass) 方法返回的是 null，所以 getProperties(readVersion(mainClass)) 方法只获取了当前服务的进程 ID
         super(NAME, getProperties(readVersion(mainClass)));
     }
 
@@ -65,7 +65,7 @@ class ApplicationInfoPropertySource extends MapPropertySource implements OriginL
         }
         ApplicationPid applicationPid = new ApplicationPid();
         if (applicationPid.isAvailable()) {
-            //设置服务进程 ID
+            //设置当前服务的进程 ID
             result.put("spring.application.pid", applicationPid.toLong());
         }
         return result;

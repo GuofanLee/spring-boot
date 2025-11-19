@@ -72,6 +72,28 @@ class SpringApplicationRunListeners {
     }
 
     void environmentPrepared(ConfigurableBootstrapContext bootstrapContext, ConfigurableEnvironment environment) {
+        /* 第一个参数没啥用
+         * 第二个参数的作用是：调用每个 listener 中的 environmentPrepared(bootstrapContext, environment) 方法
+         * 其中的 bootstrapContext 参数是 DefaultBootstrapContext 的实例，environment 中包含各种系统属性、环境变量、命令行参数、当前应用信息资源（只包含当前服务的进程 ID）
+         * 由前可知，这里的 listeners 中只有一个监听器：EventPublishingRunListener
+         * EventPublishingRunListener 会找到 SpringApplication 中不同 event（当前 event：environmentPrepared）需要处理的监听器，并调用这些监听器的 onApplicationEvent() 方法
+         *
+         * environmentPrepared 阶段需要处理的监听器有五个：EnvironmentPostProcessorApplicationListener、AnsiOutputApplicationListener、LoggingApplicationListener、BackgroundPreinitializer 和 FileEncodingApplicationListener
+         *  1、EnvironmentPostProcessorApplicationListener
+         *     读取所有类路径下的 META-INF/spring.factories 配置文件，找到所有 org.springframework.boot.env.EnvironmentPostProcessor 接口的实现类并创建对象，然后调用每个对象的 postProcessEnvironment(environment, application) 方法
+         *     总共找到并创建了 7 个 org.springframework.boot.env.EnvironmentPostProcessor 接口的实现类对象，其中：
+         *      1、RandomValuePropertySourceEnvironmentPostProcessor：给 environment 中的 SystemEnvironmentPropertySource 资源后面添加了一个 RandomValuePropertySource 资源对象
+         *      2、SystemEnvironmentPropertySourceEnvironmentPostProcessor 将 environment 中的 SystemEnvironmentPropertySource 资源替换为了 SystemEnvironmentPropertySourceEnvironmentPostProcessor 中的内部类 OriginAwareSystemEnvironmentPropertySource（资源名称和内容都没变，只是换了个包装类）
+         *      3、CloudFoundryVcapEnvironmentPostProcessor 想做啥但啥都没做
+         *      4、SpringApplicationJsonEnvironmentPostProcessor 想做啥但啥都没做
+         *      5、ConfigDataEnvironmentPostProcessor 没看懂干了啥
+         *      6、IntegrationPropertiesEnvironmentPostProcessor 想做啥但啥都没做
+         *      7、ReactorEnvironmentPostProcessor 想做啥但啥都没做
+         *  2、AnsiOutputApplicationListener：没看懂干了啥
+         *  3、LoggingApplicationListener：没看懂干了啥
+         *  4、BackgroundPreinitializer：没看懂干了啥
+         *  5、FileEncodingApplicationListener：想做啥但啥都没做
+         */
         doWithListeners("spring.boot.application.environment-prepared",
                 (listener) -> listener.environmentPrepared(bootstrapContext, environment));
     }

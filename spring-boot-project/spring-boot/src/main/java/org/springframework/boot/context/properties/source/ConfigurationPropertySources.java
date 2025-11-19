@@ -86,9 +86,9 @@ public final class ConfigurationPropertySources {
     public static void attach(Environment environment) {
         Assert.isInstanceOf(ConfigurableEnvironment.class, environment);
         MutablePropertySources sources = ((ConfigurableEnvironment) environment).getPropertySources();
-        //环境中没有名为 configurationProperties 的资源，所以这里获取的是 null
+        //第一次进入该方法时，环境中没有名为 configurationProperties 的资源，所以这里获取的是 null
         PropertySource<?> attached = getAttached(sources);
-        //isUsingSources() 方法返回了 false，所以 !isUsingSources() 为 true
+        //第一次进入该方法时，isUsingSources() 方法返回 false，所以 !isUsingSources() 为 true
         if (!isUsingSources(attached, sources)) {
             /* 将所有环境资源封装成 SpringConfigurationPropertySources
              * 然后封装到 ConfigurationPropertySourcesPropertySource 中
@@ -97,10 +97,10 @@ public final class ConfigurationPropertySources {
             attached = new ConfigurationPropertySourcesPropertySource(ATTACHED_PROPERTY_SOURCE_NAME,
                     new SpringConfigurationPropertySources(sources));
         }
-        /* 删除环境中原来名为 configurationProperties 的资源，然后将新的资源添加到最前面
+        /* 删除环境中原来名为 configurationProperties 的资源，然后将新的名为 configurationProperties 的资源添加到最前面
          * 环境中原来并没有名为 configurationProperties 的资源
-         * 所以结果是将原来所有的环境资源打包进 ConfigurationPropertySourcesPropertySource，并命名为 configurationProperties，然后将其添加到环境资源的第一个位置
-         * 最终结果是：sources 中第一个位置里面包含了他后面所有位置的资源（将原来的 List 包装进 ConfigurationPropertySourcesPropertySource 然后放在第一个位置）
+         * 所以结果是将所有的环境资源打包进 ConfigurationPropertySourcesPropertySource，并命名为 configurationProperties，然后将其添加到环境资源的第一个位置
+         * 最终结果是：sources 中第一个元素包含了 sources 中的所有元素，相当于 List 中的第一个元素是该 List 的引用本身
          */
         sources.remove(ATTACHED_PROPERTY_SOURCE_NAME);
         sources.addFirst(attached);
@@ -112,7 +112,7 @@ public final class ConfigurationPropertySources {
     }
 
     static PropertySource<?> getAttached(MutablePropertySources sources) {
-        //环境中没有名为 configurationProperties 的资源，所以这里返回 null
+        //如果环境中有名为 configurationProperties 的资源，则返回该资源，否则返回 null
         return (sources != null) ? sources.get(ATTACHED_PROPERTY_SOURCE_NAME) : null;
     }
 
@@ -127,12 +127,15 @@ public final class ConfigurationPropertySources {
      */
     public static Iterable<ConfigurationPropertySource> get(Environment environment) {
         Assert.isInstanceOf(ConfigurableEnvironment.class, environment);
+        //获取了所有环境资源
         MutablePropertySources sources = ((ConfigurableEnvironment) environment).getPropertySources();
+        //获取的还是所有环境资源
         ConfigurationPropertySourcesPropertySource attached = (ConfigurationPropertySourcesPropertySource) sources
                 .get(ATTACHED_PROPERTY_SOURCE_NAME);
         if (attached == null) {
             return from(sources);
         }
+        //返回所有环境资源
         return attached.getSource();
     }
 
