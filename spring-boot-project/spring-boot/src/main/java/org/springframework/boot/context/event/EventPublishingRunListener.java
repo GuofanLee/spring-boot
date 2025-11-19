@@ -106,7 +106,8 @@ class EventPublishingRunListener implements SpringApplicationRunListener, Ordere
          *      2、SystemEnvironmentPropertySourceEnvironmentPostProcessor 将 environment 中的 SystemEnvironmentPropertySource 资源替换为了 SystemEnvironmentPropertySourceEnvironmentPostProcessor 中的内部类 OriginAwareSystemEnvironmentPropertySource（资源名称和内容都没变，只是换了个包装类）
          *      3、CloudFoundryVcapEnvironmentPostProcessor 想做啥但啥都没做
          *      4、SpringApplicationJsonEnvironmentPostProcessor 想做啥但啥都没做
-         *      5、ConfigDataEnvironmentPostProcessor 没看懂干了啥
+         *      5、ConfigDataEnvironmentPostProcessor：解析配置文件，将配置文件中的配置项封装到一个 OriginTrackedMapPropertySource 中（一个配置文件对应一个 OriginTrackedMapPropertySource），然后将其添加到环境资源的最后面
+         *         OriginTrackedMapPropertySource 中有一个 Map<String, String> 类型的 source，其中 Map 的 Key 为配置项的 Key，Map 的 Value 为配置项的 Value
          *      6、IntegrationPropertiesEnvironmentPostProcessor 想做啥但啥都没做
          *      7、ReactorEnvironmentPostProcessor 想做啥但啥都没做
          *  2、AnsiOutputApplicationListener：没看懂干了啥

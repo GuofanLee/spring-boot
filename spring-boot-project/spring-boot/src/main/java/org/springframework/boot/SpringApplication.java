@@ -344,6 +344,11 @@ public class SpringApplication {
             ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
             //准备运行环境
             ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+            /* 打印 banner，并返回一个 Banner 接口的实现类 PrintedBanner 对象，其中封装了 banner 对象和应用主启动类
+             * 默认从类路径下找 banner.txt 文件
+             * 可以在配置文件中通过 spring.banner.location 指定 banner 文件的位置
+             * 如果没有通过 spring.banner.location 指定 banner 文件的位置，或者指定的位置没有 banner 文件，并且类路径下也没有 banner.txt 文件，则使用 Spring Boot 的默认 banner：org.springframework.boot.SpringBootBanner
+             */
             Banner printedBanner = printBanner(environment);
             context = createApplicationContext();
             context.setApplicationStartup(this.applicationStartup);
@@ -671,15 +676,20 @@ public class SpringApplication {
     }
 
     private Banner printBanner(ConfigurableEnvironment environment) {
+        //this.properties.getBannerMode(environment) 返回的是 Banner.Mode.CONSOLE，所以不会走下面的分支
         if (this.properties.getBannerMode(environment) == Banner.Mode.OFF) {
             return null;
         }
+        //this.resourceLoader 是 null，所以创建了一个 DefaultResourceLoader
         ResourceLoader resourceLoader = (this.resourceLoader != null) ? this.resourceLoader
                 : new DefaultResourceLoader(null);
+        //创建 SpringApplicationBannerPrinter
         SpringApplicationBannerPrinter bannerPrinter = new SpringApplicationBannerPrinter(resourceLoader, this.banner);
+        //this.properties.getBannerMode(environment) 返回的是 Banner.Mode.CONSOLE，所以不会走下面的分支
         if (this.properties.getBannerMode(environment) == Mode.LOG) {
             return bannerPrinter.print(environment, this.mainApplicationClass, logger);
         }
+        //打印 banner，并返回一个 Banner 接口的实现类 PrintedBanner 对象，其中封装了 banner 对象和应用主启动类
         return bannerPrinter.print(environment, this.mainApplicationClass, System.out);
     }
 
