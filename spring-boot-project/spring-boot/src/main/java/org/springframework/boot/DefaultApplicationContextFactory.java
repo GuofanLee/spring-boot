@@ -37,7 +37,7 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
     @Override
     public Class<? extends ConfigurableEnvironment> getEnvironmentType(WebApplicationType webApplicationType) {
         /* 根据 webApplicationType，返回 ApplicationServletEnvironment.class 对象或者 ApplicationReactiveWebEnvironment.class 对象
-         * 如果 webApplicationType 既不是 WebApplicationType.REACTIVE，也不是 WebApplicationType.SERVLET，则返回 null
+         * 如果 webApplicationType 既不是 WebApplicationType.SERVLET，也不是 WebApplicationType.REACTIVE，则返回 null
          */
         return getFromSpringFactories(webApplicationType, ApplicationContextFactory::getEnvironmentType, null);
     }
@@ -45,7 +45,7 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
     @Override
     public ConfigurableEnvironment createEnvironment(WebApplicationType webApplicationType) {
         /* 根据 webApplicationType，创建并返回 ApplicationServletEnvironment 对象或者 ApplicationReactiveWebEnvironment 对象
-         * 如果 webApplicationType 既不是 WebApplicationType.REACTIVE，也不是 WebApplicationType.SERVLET，则返回 null
+         * 如果 webApplicationType 既不是 WebApplicationType.SERVLET，也不是 WebApplicationType.REACTIVE，则返回 null
          */
         return getFromSpringFactories(webApplicationType, ApplicationContextFactory::createEnvironment, null);
     }
@@ -53,6 +53,9 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
     @Override
     public ConfigurableApplicationContext create(WebApplicationType webApplicationType) {
         try {
+            /* 根据 webApplicationType，创建并返回 AnnotationConfigServletWebServerApplicationContext 对象或者 AnnotationConfigReactiveWebServerApplicationContext 对象
+             * 如果 webApplicationType 既不是 WebApplicationType.SERVLET，也不是 WebApplicationType.REACTIVE，则创建并返回 AnnotationConfigApplicationContext 对象
+             */
             return getFromSpringFactories(webApplicationType, ApplicationContextFactory::create,
                     this::createDefaultApplicationContext);
         }
@@ -87,7 +90,7 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
                 return result;
             }
         }
-        //如果 webApplicationType 既不是 WebApplicationType.REACTIVE，也不是 WebApplicationType.SERVLET，则返回 null
+        //如果上面的 for 循环没有返回结果，则根据参数 defaultResult 提供的 Supplier 创建并返回结果，如果 defaultResult 为 null，则返回 null
         return (defaultResult != null) ? defaultResult.get() : null;
     }
 

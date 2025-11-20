@@ -350,8 +350,13 @@ public class SpringApplication {
              * 如果没有通过 spring.banner.location 指定 banner 文件的位置，或者指定的位置没有 banner 文件，并且类路径下也没有 banner.txt 文件，则使用 Spring Boot 的默认 banner：org.springframework.boot.SpringBootBanner
              */
             Banner printedBanner = printBanner(environment);
+            //根据当前应用类型，创建并返回 AnnotationConfigServletWebServerApplicationContext 对象或者 AnnotationConfigReactiveWebServerApplicationContext 对象或者 AnnotationConfigApplicationContext 对象
             context = createApplicationContext();
+            /* 实际调用的是其父类 GenericApplicationContext 中的 setApplicationStartup() 方法
+             * this.applicationStartup 的实际类型：DefaultApplicationStartup
+             */
             context.setApplicationStartup(this.applicationStartup);
+            //初始化容器
             prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
             refreshContext(context);
             afterRefresh(context, applicationArguments);
@@ -399,7 +404,7 @@ public class SpringApplication {
          * 最终结果是：环境资源 sources 中第一个元素包含了 sources 中的所有元素，相当于 List 中的第一个元素是该 List 的引用本身
          */
         ConfigurationPropertySources.attach(environment);
-        //通知监听器环境准备完毕
+        //通知监听器环境准备完毕，里面加载并解析了配置文件
         listeners.environmentPrepared(bootstrapContext, environment);
         //将包含当前服务进程 ID 的应用信息资源移动到环境资源的最后一个位置
         ApplicationInfoPropertySource.moveToEnd(environment);
@@ -446,8 +451,11 @@ public class SpringApplication {
     private void prepareContext(DefaultBootstrapContext bootstrapContext, ConfigurableApplicationContext context,
             ConfigurableEnvironment environment, SpringApplicationRunListeners listeners,
             ApplicationArguments applicationArguments, Banner printedBanner) {
+        //将当前环境设置给容器
         context.setEnvironment(environment);
+        //设置了一百多个类型转换器
         postProcessApplicationContext(context);
+        //没有启用 AOT 编译，所以 addAotGeneratedInitializerIfNecessary() 方法没有做什么实际操作
         addAotGeneratedInitializerIfNecessary(this.initializers);
         applyInitializers(context);
         listeners.contextPrepared(context);
@@ -486,6 +494,7 @@ public class SpringApplication {
     }
 
     private void addAotGeneratedInitializerIfNecessary(List<ApplicationContextInitializer<?>> initializers) {
+        //没有启用 AOT 编译，所以下面的分支不会执行
         if (AotDetector.useGeneratedArtifacts()) {
             List<ApplicationContextInitializer<?>> aotInitializers = new ArrayList<>(
                     initializers.stream().filter(AotApplicationContextInitializer.class::isInstance).toList());
@@ -701,6 +710,7 @@ public class SpringApplication {
      * @see #setApplicationContextFactory(ApplicationContextFactory)
      */
     protected ConfigurableApplicationContext createApplicationContext() {
+        //根据当前应用类型，创建并返回 AnnotationConfigServletWebServerApplicationContext 对象或者 AnnotationConfigReactiveWebServerApplicationContext 对象或者 AnnotationConfigApplicationContext 对象
         return this.applicationContextFactory.create(this.properties.getWebApplicationType());
     }
 
@@ -711,10 +721,12 @@ public class SpringApplication {
      */
     protected void postProcessApplicationContext(ConfigurableApplicationContext context) {
         if (this.beanNameGenerator != null) {
+            //this.beanNameGenerator 是 null，不进该分支
             context.getBeanFactory()
                     .registerSingleton(AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR, this.beanNameGenerator);
         }
         if (this.resourceLoader != null) {
+            //this.resourceLoader 是 null，不进该分支
             if (context instanceof GenericApplicationContext genericApplicationContext) {
                 genericApplicationContext.setResourceLoader(this.resourceLoader);
             }
@@ -723,6 +735,12 @@ public class SpringApplication {
             }
         }
         if (this.addConversionService) {
+            /* this.addConversionService 是 true，所以会走该分支
+             * 设置了一百多个类型转换器
+             * context 就是 ApplicationContext
+             * context.getBeanFactory() 返回的是 DefaultListableBeanFactory
+             * 因为前面已经将当前 environment 对象设置给了 context，所以 context.getEnvironment() 返回的是当前 environment 对象
+             */
             context.getBeanFactory().setConversionService(context.getEnvironment().getConversionService());
         }
     }
@@ -735,10 +753,20 @@ public class SpringApplication {
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     protected void applyInitializers(ConfigurableApplicationContext context) {
+        //getInitializers() 返回的是当前 this.initializers 对象
         for (ApplicationContextInitializer initializer : getInitializers()) {
             Class<?> requiredType = GenericTypeResolver.resolveTypeArgument(initializer.getClass(),
                     ApplicationContextInitializer.class);
             Assert.state(requiredType.isInstance(context), "Unable to call initializer");
+            /* 当前 this.initializers 中总共有 7 个 ApplicationContextInitializer 接口的实现类对象
+             *
+             *
+             *
+             *
+             *
+             *
+             *
+             */
             initializer.initialize(context);
         }
     }
