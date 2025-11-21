@@ -17,10 +17,10 @@
 import org.springframework.boot.build.docs.ConfigureJavadocLinks
 
 plugins {
+	id "org.jetbrains.kotlin.jvm"
 	id "dev.adamko.dokkatoo-html"
 	id "java"
 	id "org.antora"
-	id "org.jetbrains.kotlin.jvm"
 	id "org.springframework.boot.aggregator"
 	id "org.springframework.boot.antora-contributor"
 	id "org.springframework.boot.antora-dependencies"
@@ -268,6 +268,12 @@ def configurationPropertiesMetadataAggregate = aggregates.create("configurationP
 	category = Category.DOCUMENTATION
 	usage = "configuration-properties-metadata"
 }
+
+def checkAggregatedSpringConfigurationMetadata = tasks.register("checkAggregatedSpringConfigurationMetadata", org.springframework.boot.build.context.properties.CheckAggregatedSpringConfigurationMetadata) {
+	configurationPropertyMetadata = configurationPropertiesMetadataAggregate.files
+	reportLocation = layout.buildDirectory.file("checkAggregatedSpringConfigurationMetadata/report.txt")
+}
+tasks.named("check") { dependsOn checkAggregatedSpringConfigurationMetadata }
 
 tasks.register("documentConfigurationProperties", org.springframework.boot.build.context.properties.DocumentConfigurationProperties) {
 	configurationPropertyMetadata = configurationPropertiesMetadataAggregate.files

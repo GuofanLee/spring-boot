@@ -48,6 +48,10 @@ war {
 
 bootBuildImage {
 	archiveFile = war.archiveFile
-	runImage = "paketobuildpacks/ubuntu-noble-run-base:latest"
-	environment = ['BP_JVM_VERSION': java.targetCompatibility.getMajorVersion(), 'BP_TOMCAT_VERSION': '10.*']
+	runImage = "paketobuildpacks/ubuntu-noble-run:latest"
+	environment = [
+		'BP_JVM_VERSION': java.targetCompatibility.getMajorVersion(),
+		'BP_TOMCAT_VERSION': '10.*',
+		'BP_DEPENDENCY_MIRROR_DOWNLOADS_APACHE_ORG': 'https://archive.apache.org/dist'
+	]
 }

@@ -247,7 +247,7 @@ public class FlywayProperties {
 	 * Whether to validate migrations and callbacks whose scripts do not obey the correct
 	 * naming convention.
 	 */
-	private boolean validateMigrationNaming = false;
+	private boolean validateMigrationNaming;
 
 	/**
 	 * Whether to automatically call validate when performing a migration.
@@ -794,7 +794,7 @@ public class FlywayProperties {
 		this.outputQueryResults = outputQueryResults;
 	}
 
-	@DeprecatedConfigurationProperty(replacement = "spring.flyway.sqlserver.kerberos-login-file")
+	@DeprecatedConfigurationProperty(replacement = "spring.flyway.sqlserver.kerberos-login-file", since = "3.2.0")
 	@Deprecated(since = "3.2.0", forRemoval = true)
 	public String getSqlServerKerberosLoginFile() {
 		return getSqlserver().getKerberosLoginFile();

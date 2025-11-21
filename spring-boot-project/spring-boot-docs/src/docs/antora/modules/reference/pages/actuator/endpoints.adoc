@@ -383,6 +383,17 @@ management:
 TIP: See javadoc:org.springframework.boot.actuate.autoconfigure.endpoint.web.CorsEndpointProperties[] for a complete list of options.
 
 
+[[actuator.endpoints.json]]
+== JSON
+
+When working with JSON, Jackson is used for serialization and deserialization.
+By default, an isolated javadoc:com.fasterxml.jackson.databind.ObjectMapper[] is used.
+This isolation means that it does not share the same configuration as the application's `ObjectMapper` and it is not affected by `spring.jackson.*` properties.
+To disable this behavior and configure Actuator to use the application's `ObjectMapper`, set configprop:management.endpoints.jackson.isolated-object-mapper[] to `false`.
+Alternatively, you can define your own javadoc:org.springframework.boot.actuate.endpoint.jackson.EndpointObjectMapper[] bean that produces an `ObjectMapper` that meets your needs.
+Actuator will then use it for JSON processing.
+
+
 
 [[actuator.endpoints.implementing-custom]]
 == Implementing Custom Endpoints
@@ -401,6 +412,7 @@ For example, javadoc:org.springframework.boot.actuate.endpoint.web.annotation.We
 
 You can write technology-specific extensions by using javadoc:org.springframework.boot.actuate.endpoint.web.annotation.EndpointWebExtension[format=annotation] and javadoc:org.springframework.boot.actuate.endpoint.jmx.annotation.EndpointJmxExtension[format=annotation].
 These annotations let you provide technology-specific operations to augment an existing endpoint.
+An endpoint may have at most one extension of each type.
 
 Finally, if you need access to web-framework-specific functionality, you can implement servlet or Spring javadoc:org.springframework.stereotype.Controller[format=annotation] and javadoc:org.springframework.web.bind.annotation.RestController[format=annotation] endpoints at the cost of them not being available over JMX or when using a different web framework.
 
@@ -672,8 +684,8 @@ with the `key` listed in the following table:
 TIP: You can disable them all by setting the configprop:management.health.defaults.enabled[] property.
 
 TIP: The `ssl` javadoc:org.springframework.boot.actuate.health.HealthIndicator[] has a "warning threshold" property named configprop:management.health.ssl.certificate-validity-warning-threshold[].
-If an SSL certificate will be invalid within the time span defined by this threshold, the javadoc:org.springframework.boot.actuate.health.HealthIndicator[] will warn you but it will still return HTTP 200 to not disrupt the application.
-You can use this threshold to give yourself enough lead time to rotate the soon to be expired certificate.
+You can use this threshold to give yourself enough lead time to rotate the soon-to-be-expired certificate.
+If an SSL certificate will become invalid within the period defined by this threshold, the javadoc:org.springframework.boot.actuate.health.HealthIndicator[] will report this in the details section of its response where `details.validChains.certificates.[*].validity.status` will have the value `WILL_EXPIRE_SOON`.
 
 Additional javadoc:org.springframework.boot.actuate.health.HealthIndicator[] beans are available but are not enabled by default:
 
@@ -1256,7 +1268,7 @@ The `info` endpoint publishes information about your process, see javadoc:org.sp
 [[actuator.endpoints.info.ssl-information]]
 === SSL Information
 
-The `info` endpoint publishes information about your SSL certificates (that are configured through xref:features/ssl.adoc#features.ssl.bundles[SSL Bundles]), see javadoc:org.springframework.boot.info.SslInfo[] for more details. This endpoint reuses the "warning threshold" property of javadoc:org.springframework.boot.actuate.ssl.SslHealthIndicator[]: if an SSL certificate will be invalid within the time span defined by this threshold, it will trigger a warning. See the `management.health.ssl.certificate-validity-warning-threshold` property.
+The `info` endpoint publishes information about your SSL certificates (that are configured through xref:features/ssl.adoc#features.ssl.bundles[SSL Bundles]), see javadoc:org.springframework.boot.info.SslInfo[] for more details. This endpoint reuses the "warning threshold" property of javadoc:org.springframework.boot.actuate.ssl.SslHealthIndicator[] (configprop:management.health.ssl.certificate-validity-warning-threshold[]). If an SSL certificate will be invalid within the time span defined by this threshold, its status will be `WILL_EXPIRE_SOON` in the xref:api:rest/actuator/info.adoc#info.retrieving.response-structure.ssl[SSL section] of the endpoint's response.
 
 
 
